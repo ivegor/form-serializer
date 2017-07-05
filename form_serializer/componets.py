@@ -35,7 +35,7 @@ class SerializerFieldByAttr(BaseFieldSerializer):
             except AttributeError:
                 if os.environ.get('DEBUG'):
                     logger.debug(
-                        "{} dn't have attribute {}. Try: {}".format(
+                        "{} dn't have attribute '{}'. Try: {}".format(
                             repr(target_attr),
                             attr,
                             ', '.join(dir(target_attr))
@@ -44,7 +44,12 @@ class SerializerFieldByAttr(BaseFieldSerializer):
                 return
 
         if callable(target_attr):
-            target_attr = target_attr()
+            try:
+                target_attr = target_attr()
+            except Exception as e:
+                if os.environ.get('DEBUG'):
+                    logger.debug(e)
+                return
         return target_attr
 
 
