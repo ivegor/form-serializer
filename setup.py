@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(
-    name='from-serializer',
+    name='form-serializer',
     version='0.1',
     description='Class based serializer for form.',
     author_email='ivankegor@gmail.com',
