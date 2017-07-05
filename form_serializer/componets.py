@@ -12,21 +12,21 @@ class SerializeError(AttributeError):
 
 class FormSerializer(BaseFormSerializer):
     def __init__(self, form):
-        self.form = form
+        self._form = form
 
     def serialize(self):
         response = {}
         for f in self._fields:
-            response[f] = (getattr(self, f).serialize(self.form, f))
+            response[f] = (getattr(self, f).serialize(self._form, f))
         return response
 
 
 class SerializerFieldByAttr(BaseFieldSerializer):
     def __init__(self, field_name=None):
-        self.field_name = field_name
+        self._field_name = field_name
 
     def serialize(self, obj, default_field_name):
-        path_name = self.field_name or default_field_name
+        path_name = self._field_name or default_field_name
 
         target_attr = obj
         for attr in path_name.split('.'):
@@ -55,35 +55,47 @@ class SerializerFieldByAttr(BaseFieldSerializer):
 
 class SerializerFieldMethod(BaseFieldSerializer):
     def __get__(self, instance, owner):
-        self.instance = instance
+        self._instance = instance
 
     def serialize(self, obj, field_name):
         method_name = 'get_' + field_name
         try:
-            return getattr(self.instance, method_name)(obj)
+            return getattr(self._instance, method_name)(obj)
         except AttributeError:
-            raise SerializeError('Method must be called is %s. And take one arg.' % method_name)
+            raise SerializeError('Method must be called is {}. And take one arg.'.format(method_name))
 
 
 class SerializerFieldSet(BaseFieldSetSerializer):
-    def __init__(self, field_name=None):
-        self.field_name = field_name
+    def __init__(self, field_name=None, as_list=True):
+        self._field_name = field_name
+        if as_list:
+            self._container = []
+            self._add_to_container = self._add_to_list
+        else:
+            self._container = {}
+            self._add_to_container = self._add_to_dict
 
     def serialize(self, obj, default_field_name):
-        field_set_obj = getattr(obj, self.field_name or default_field_name)
-        fields = {}
+        field_set_obj = getattr(obj, self._field_name or default_field_name)
+
         for k, v in field_set_obj.items():
             field_obj = {}
             serializer = self._get_serializer(v.__class__)
 
             for f in serializer._fields:
                 field_obj[f] = (getattr(serializer, f).serialize(v, f))
-            fields[k] = field_obj
-        return fields
+            self._add_to_container(k, field_obj)
+        return self._container
+
+    def _add_to_list(self, key, value):
+        self._container.append(value)
+
+    def _add_to_dict(self, key, value):
+        self._container[key] = value
 
     def _get_serializer(self, model_class):
         try:
-            return getattr(self, '_special_serializers')[model_class](self.field_name)
+            return getattr(self, '_special_serializers')[model_class](self._field_name)
         except (AttributeError, KeyError):
             return self
 
