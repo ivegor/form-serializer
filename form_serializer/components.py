@@ -75,9 +75,10 @@ class SerializerFieldSet(BaseFieldSetSerializer):
         field_set_obj = getattr(obj, self._field_name or field_name)
         container = self._container_type()
 
-        for field_name, obj in field_set_obj.items():
-            field_obj = self._create_obj_for_container(obj, *args, **kwargs)
-            self._add_to_container(container, field_name, field_obj)
+        for sub_field_name, sub_field_obj in field_set_obj.items():
+            kwargs['sub_field_name'] = sub_field_name
+            serialized_field_obj = self._create_obj_for_container(sub_field_obj, *args, **kwargs)
+            self._add_to_container(container, sub_field_name, serialized_field_obj)
         return container
 
     def _create_obj_for_container(self, obj, *args, **kwargs):
