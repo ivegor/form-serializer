@@ -18,13 +18,13 @@ class MetaSerializer(type):
 
 class BaseFieldSerializer:
     @abstractmethod
-    def serialize(self, obj, field_name):
+    def serialize(self, obj, field_name, *args, **kwargs):
         pass
 
 
 class BaseFieldSetSerializer(BaseFieldSerializer, metaclass=MetaSerializer):
     @abstractmethod
-    def serialize(self, obj, field_name):
+    def serialize(self, obj, field_name, *args, **kwargs):
         pass
 
 
