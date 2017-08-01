@@ -17,7 +17,7 @@ class FormSerializer(BaseFormSerializer):
     def serialize(self):
         response = {}
         for name, field in self._fields.items():
-            response[name] = field.serialize(self._form, name)
+            response[name] = field.serialize(obj=self._form, field_name=name, parent=self)
         return response
 
 
@@ -54,14 +54,11 @@ class SerializerFieldByAttr(BaseFieldSerializer):
 
 
 class SerializerFieldMethod(BaseFieldSerializer):
-    def __get__(self, instance, owner):
-        self.instance = instance
-        return self
 
     def serialize(self, obj, field_name, *args, **kwargs):
         method_name = 'get_' + field_name
         try:
-            return getattr(self.instance, method_name)(obj)
+            return getattr(kwargs['parent'], method_name)(obj)
         except AttributeError:
             raise SerializeError('Method must be called is {}. And take one arg.'.format(method_name))
 
@@ -90,6 +87,7 @@ class SerializerFieldSet(BaseFieldSetSerializer):
         container = container_type()
 
         for name, field in serializer._fields.items():
+            kwargs['parent'] = serializer
             serialized_field_obj = field.serialize(obj=obj, field_name=name, *args, **kwargs)
             self.add_to_container(container, name, serialized_field_obj)
         return container

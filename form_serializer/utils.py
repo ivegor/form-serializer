@@ -1,6 +1,17 @@
 from functools import singledispatch, update_wrapper
 
 
+def method_dispatch(func):
+    # from "https://stackoverflow.com/questions/24601722/how-can-i-use-functools-singledispatch-with-instance-methods"
+    dispatcher = singledispatch(func)
+
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, func)
+    return wrapper
+
+
 class NearestClass(dict):
     def __missing__(self, key):
         if key is object:
@@ -22,14 +33,3 @@ class Empty:
     @check_obj.register(dict)
     def _(self, obj):
         return obj.values()
-
-
-def method_dispatch(func):
-    # from "https://stackoverflow.com/questions/24601722/how-can-i-use-functools-singledispatch-with-instance-methods"
-    dispatcher = singledispatch(func)
-
-    def wrapper(*args, **kw):
-        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
-    wrapper.register = dispatcher.register
-    update_wrapper(wrapper, func)
-    return wrapper
