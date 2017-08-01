@@ -4,16 +4,16 @@ from functools import reduce
 
 class MetaSerializer(type):
     def __new__(mcls, name, bases, namespace):
-        cl = super().__new__(mcls, name, bases, namespace)
-        cl._fields = reduce(
-            lambda x, y: x.union(y),
+        declared_fields = reduce(
+            lambda x, y: dict(x, **y),
             (c._fields for c in reversed(bases) if hasattr(c, '_fields')),
-            set()
+            {}
         )
-        for field_name, value in namespace.items():
+        for field_name, value in list(namespace.items()):
             if isinstance(value, BaseFieldSerializer):
-                cl._fields.add(field_name)
-        return cl
+                declared_fields[field_name] = (namespace.pop(field_name))
+        namespace['_fields'] = declared_fields
+        return super().__new__(mcls, name, bases, namespace)
 
 
 class BaseFieldSerializer:
