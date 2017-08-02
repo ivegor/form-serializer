@@ -58,7 +58,7 @@ class SerializerFieldMethod(BaseFieldSerializer):
     def serialize(self, obj, field_name, *args, **kwargs):
         method_name = 'get_' + field_name
         try:
-            return getattr(kwargs['parent'], method_name)(obj)
+            return getattr(kwargs['parent'], method_name)(obj, field_name, *args, **kwargs)
         except AttributeError:
             raise SerializeError('Method must be called is {}. And take one arg.'.format(method_name))
 
