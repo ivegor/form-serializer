@@ -1,9 +1,9 @@
-import os
 from functools import wraps
+from typing import Optional, Type
 
-from . import logger
-from .utils import NearestClass, method_dispatch, Empty
 from .base import BaseFieldSerializer, BaseFieldSetSerializer, BaseFormSerializer
+from .help_functions import get_attribute
+from .utils import NearestClass, method_dispatch, Empty
 
 
 class SerializeError(AttributeError):
@@ -22,56 +22,36 @@ class FormSerializer(BaseFormSerializer):
 
 
 class SerializerFieldByAttr(BaseFieldSerializer):
-    def __init__(self, field_name=None):
+    def __init__(self, field_name: Optional[str]=None):
         self.field_name = field_name
 
     def serialize(self, obj, field_name, *args, **kwargs):
         path_name = self.field_name or field_name
-
-        target_attr = obj
-        for attr in path_name.split('.'):
-            try:
-                target_attr = getattr(target_attr, attr)
-            except AttributeError:
-                if os.environ.get('DEBUG'):
-                    logger.debug(
-                        "{} dn't have attribute '{}'. Try: {}".format(
-                            repr(target_attr),
-                            attr,
-                            ', '.join(dir(target_attr))
-                        ),
-                    )
-                return
-
-        if callable(target_attr):
-            try:
-                target_attr = target_attr()
-            except Exception as e:
-                if os.environ.get('DEBUG'):
-                    logger.debug(e)
-                return
-        return target_attr
+        return get_attribute(obj, path_name)
 
 
 class SerializerFieldMethod(BaseFieldSerializer):
 
+    def __init__(self, method_name: Optional[str]=None):
+        self.method_name = method_name
+
     def serialize(self, obj, field_name, *args, **kwargs):
-        method_name = 'get_' + field_name
+        method_name = self.method_name or 'get_' + field_name
         try:
             return getattr(kwargs['parent'], method_name)(obj, field_name, *args, **kwargs)
         except AttributeError:
-            raise SerializeError('Method must be called is {}. And take one arg.'.format(method_name))
+            raise SerializeError('Method must be called is "{}".'.format(method_name))
 
 
 class SerializerFieldSet(BaseFieldSetSerializer):
-    def __init__(self, field_name=None, container_type=list, skip_empty=False):
+    def __init__(self, field_name: Optional[str]=None, container_type: type=list, skip_empty: bool=False):
         self.field_name = field_name
         self.container_type = container_type
         self.skip_empty = skip_empty
         self.empty = Empty
 
     def serialize(self, obj, field_name, *args, **kwargs):
-        field_set_obj = getattr(obj, self.field_name or field_name)
+        field_set_obj = get_attribute(obj, self.field_name or field_name)
         container = self.container_type()
 
         for sub_field_name, sub_field_obj in field_set_obj.items():
@@ -112,7 +92,7 @@ class SerializerFieldSet(BaseFieldSetSerializer):
 
 
 class specializer:
-    def __init__(self, model_class, default_serializer=None):
+    def __init__(self, model_class: type, default_serializer: Optional[Type[SerializerFieldSet]]=None):
         self.model_class = model_class
         self.default_serializer = default_serializer
 

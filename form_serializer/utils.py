@@ -1,3 +1,4 @@
+import inspect
 from functools import singledispatch, update_wrapper
 
 
@@ -33,3 +34,20 @@ class Empty:
     @check_obj.register(dict)
     def _(self, obj):
         return obj.values()
+
+
+def is_simple_callable(obj):
+    """
+    from drf
+    """
+    if not (inspect.isfunction(obj) or inspect.ismethod(obj)):
+        return False
+
+    sig = inspect.signature(obj)
+    params = sig.parameters.values()
+    return all(
+        param.kind == param.VAR_POSITIONAL or
+        param.kind == param.VAR_KEYWORD or
+        param.default != param.empty
+        for param in params
+    )
