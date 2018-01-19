@@ -1,7 +1,8 @@
 import unittest
 
 from form_serializer.base import BaseFormSerializer
-from form_serializer.components import SerializerFieldByAttr, SerializerFieldMethod, SerializerFieldSet, SerializeError
+from form_serializer.components import SerializerFieldByAttr, SerializerFieldMethod, SerializerFieldSet, SerializeError, \
+    FormSerializer
 
 
 class TestMetaClassFields(unittest.TestCase):
@@ -59,6 +60,23 @@ class TestMetaClassFields(unittest.TestCase):
         self.assertSetEqual(set(form_base._fields.values()), set(fields_base.values()))
         self.assertSetEqual(set(form_inheritance._fields.values()),
                             {self.field_by_attr_1, self.field_method_2, self.field_set_1})
+
+
+class TestForm(unittest.TestCase):
+    def setUp(self):
+        form = type('test_form', (), {'test_field_1': 1, 'test_field_2': 2})
+        self.form = form
+
+    def test_serialize(self):
+        serializer_empty_form = FormSerializer(self.form)
+        self.assertEqual(serializer_empty_form.serialize(), {})
+
+        serialize_right_form = type(
+            'test_serializer_form',
+            (FormSerializer,),
+            {'test_field_1': SerializerFieldByAttr(), 'test_field_2': SerializerFieldByAttr()}
+        )(self.form)
+        self.assertEqual(serialize_right_form.serialize(), {'test_field_1': 1, 'test_field_2': 2})
 
 
 class TestFieldByAttr(unittest.TestCase):
@@ -141,11 +159,23 @@ class TestFieldSet(unittest.TestCase):
 
     def test_serialize(self):
         serializer = self.field_set()
-        serializer.serialize(self.obj, 'field_set')
         self.assertListEqual(serializer.serialize(self.obj, 'field_set'), [{'field_1': 1}])
 
         serializer = self.field_set('field_set')
-        serializer.serialize(self.obj, '')
         self.assertListEqual(serializer.serialize(self.obj, 'field_set'), [{'field_1': 1}])
 
+    def test_container_serialize(self):
+        serializer = self.field_set(container_type=list)
+        self.assertListEqual(serializer.serialize(self.obj, 'field_set'), [{'field_1': 1}])
 
+        serializer = self.field_set(container_type=dict)
+        self.assertDictEqual(serializer.serialize(self.obj, 'field_set'), {'f_1': {'field_1': 1}})
+
+        serializer = self.field_set(container_type=tuple)
+        with self.assertRaises(SerializeError) as er:
+            serializer.serialize(self.obj, 'field_set')
+        self.assertTrue('Bad container type' == str(er.exception))
+
+
+if __name__ == '__main_':
+    unittest.main()

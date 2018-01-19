@@ -44,7 +44,7 @@ class SerializerFieldMethod(BaseFieldSerializer):
 
 
 class SerializerFieldSet(BaseFieldSetSerializer):
-    def __init__(self, field_name: Optional[str]=None, container_type: type=list, skip_empty: bool=False):
+    def __init__(self, field_name: Optional[str]=None, container_type: Type=list, skip_empty: bool=False):
         self.field_name = field_name
         self.container_type = container_type
         self.skip_empty = skip_empty
@@ -92,7 +92,7 @@ class SerializerFieldSet(BaseFieldSetSerializer):
 
 
 class specializer:
-    def __init__(self, model_class: type, default_serializer: Optional[Type[SerializerFieldSet]]=None):
+    def __init__(self, model_class: type, default_serializer: Type[SerializerFieldSet]=None):
         self.model_class = model_class
         self.default_serializer = default_serializer
 

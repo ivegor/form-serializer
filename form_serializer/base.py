@@ -29,7 +29,6 @@ class BaseFieldSetSerializer(BaseFieldSerializer, metaclass=MetaSerializer):
 
 
 class BaseFormSerializer(metaclass=MetaSerializer):
-
     @abstractmethod
     def serialize(self):
         pass
