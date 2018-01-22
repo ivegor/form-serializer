@@ -69,7 +69,8 @@ class SerializerFieldSet(BaseFieldSetSerializer):
         for name, field in serializer._fields.items():
             kwargs['parent'] = serializer
             serialized_field_obj = field.serialize(obj=obj, field_name=name, *args, **kwargs)
-            self.add_to_container(container, name, serialized_field_obj)
+            if not (self.skip_empty and self.empty(serialized_field_obj)):
+                self.add_to_container(container, name, serialized_field_obj)
         return container
 
     @method_dispatch
@@ -91,7 +92,7 @@ class SerializerFieldSet(BaseFieldSetSerializer):
             return self
 
 
-class specializer:
+class specialize:
     def __init__(self, model_class: type, default_serializer: Type[SerializerFieldSet]=None):
         self.model_class = model_class
         self.default_serializer = default_serializer

@@ -2,7 +2,7 @@ import unittest
 
 from form_serializer.base import BaseFormSerializer
 from form_serializer.components import SerializerFieldByAttr, SerializerFieldMethod, SerializerFieldSet, SerializeError, \
-    FormSerializer
+    FormSerializer, specialize
 
 
 class TestMetaClassFields(unittest.TestCase):
@@ -175,6 +175,52 @@ class TestFieldSet(unittest.TestCase):
         with self.assertRaises(SerializeError) as er:
             serializer.serialize(self.obj, 'field_set')
         self.assertTrue('Bad container type' == str(er.exception))
+
+
+class TestFieldSetSpecializer(unittest.TestCase):
+    def setUp(self):
+        class TField1:
+            field_1 = 1
+            field_2 = 2
+
+        class TField2:
+            field_1 = 'field'
+            field_3 = 3
+
+        class TObj:
+            field_set = {'f_1': TField1(), 'f_2': TField2()}
+
+        class DefaultFieldSet(SerializerFieldSet):
+            field_1 = SerializerFieldByAttr()
+            field_2 = SerializerFieldByAttr()
+
+        @specialize(TField2)
+        class CustomFieldSet(DefaultFieldSet):
+            field_1 = SerializerFieldByAttr()
+            field_3 = SerializerFieldByAttr()
+
+        self.obj = TObj()
+        self.field_set = DefaultFieldSet
+
+    def test_serialize_with_empty(self):
+        serializer = self.field_set(container_type=dict)
+        self.assertDictEqual(
+            serializer.serialize(self.obj, 'field_set'),
+            {
+                'f_1': {'field_1': 1, 'field_2': 2},
+                'f_2': {'field_1': 'field', 'field_2': None, 'field_3': 3}
+            }
+        )
+
+    def test_serialize_wo_empty(self):
+        serializer = self.field_set(container_type=dict, skip_empty=True)
+        self.assertDictEqual(
+            serializer.serialize(self.obj, 'field_set'),
+            {
+                'f_1': {'field_1': 1, 'field_2': 2},
+                'f_2': {'field_1': 'field', 'field_3': 3}
+            }
+        )
 
 
 if __name__ == '__main_':
