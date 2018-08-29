@@ -14,10 +14,14 @@ def method_dispatch(func):
 
 
 class NearestClass(dict):
-    def __missing__(self, key):
-        if key is object:
-            raise KeyError
-        return self[key.__mro__[1]]
+    def get_nearest(self, key):
+        for cl in key.__mro__:
+            try:
+                return self[cl]
+            except KeyError:
+                pass
+
+        raise KeyError
 
 
 class Empty:

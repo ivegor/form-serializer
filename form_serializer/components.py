@@ -87,7 +87,7 @@ class SerializerFieldSet(BaseFieldSetSerializer):
 
     def get_serializer(self, model_class):
         try:
-            return getattr(self, '_special_serializers')[model_class](self.field_name)
+            return getattr(self, '_special_serializers').get_nearest(model_class)(self.field_name)
         except (AttributeError, KeyError):
             return self
 
