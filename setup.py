@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='form-serializer',
-    version='0.1.2',
+    version='0.1.3',
     description='Class based serializer for form.',
     author_email='ivankegor@gmail.com',
     url='https://github.com/ivegor/form-serializer',
